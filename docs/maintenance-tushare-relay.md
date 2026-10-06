@@ -70,6 +70,17 @@ bash scripts/tushare-relay-e2e/run-e2e.sh   # 可选参数:后端端口,默认 2
 | `desktop` 层 `node --test` | ⚠️ 64 用例中 1 个既有失败:`release-publish.test.cjs` 的 OSS 上传测试(官方发布脚本,本机环境不兼容;本改动未触碰任何 desktop 文件)→ 该项 **NOT VERIFIED(本机)**,官方 CI 应为通过;打包入口 `installer:mac` 不依赖它 |
 | 真实中转(用户 Token) | ⏳ **NOT VERIFIED——需用户在应用内填真实 Token 后点「测试连接」**(见第 8 节步骤) |
 | 桌面 GUI 操作 | ⏳ 建议用户按第 8 节在 DMG 安装后确认界面与按钮;本机已用后端 API 级 E2E 覆盖同链路 |
+| 打包产物验证 | ✅ DMG 内前端含 `tushare_api_url`、后端二进制含 `/api/v1/settings/tushare/test` 与官方默认地址;用 .app 内置后端二进制 + 模拟中转复测,`ok:true` 且报文为标准格式 |
+
+## 5.1 交付产物(2026-10-06 构建)
+
+| 项 | 值 |
+| --- | --- |
+| 安装包 | `~/.zcode/workspace/default/easy-stock-personal-builds/easy-stock-v1.4.0-tushare-relay.1-macos-arm64.dmg`(410MB,ad-hoc 签名,与官方未签名发行一致) |
+| 同内容 zip | `easy-stock-v1.4.0-tushare-relay.1-macos-arm64.zip`(377MB) |
+| DMG SHA-256 | `b4615a4bd0972544f32d38631948237d733e383f7abe39cbc8c26ecb0156acee` |
+| 功能提交 | `6f5f099`(后端)、`1d31982`(前端)、`dd649aa`(E2E 脚本)、`a542031`(本文档) |
+| 个人 Git 标记 | `tushare-relay-v1.4.0-1` |
 
 ## 6. 安装、用户数据与回退
 
