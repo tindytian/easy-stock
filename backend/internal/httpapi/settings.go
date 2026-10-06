@@ -40,6 +40,7 @@ type settingsView struct {
 		EastMoneyCookie secretSettingStatus `json:"eastmoney_cookie"`
 		WeChatAPIToken  secretSettingStatus `json:"wechat_api_token"`
 	} `json:"credentials"`
+	TushareAPIURL    string `json:"tushare_api_url"`
 	ReviewAutomation struct {
 		Profiles []reviewSourceProfileView `json:"profiles"`
 	} `json:"review_automation"`
@@ -109,6 +110,7 @@ type settingsUpdateRequest struct {
 		EastMoneyCookie *string `json:"eastmoney_cookie"`
 		WeChatAPIToken  *string `json:"wechat_api_token"`
 	} `json:"credentials"`
+	TushareAPIURL    *string  `json:"tushare_api_url"`
 	ClearSecrets     []string `json:"clear_secrets"`
 	ReviewAutomation struct {
 		Profiles *[]reviewSourceProfileUpdate `json:"profiles"`
@@ -207,6 +209,7 @@ func (s *Server) settingsUpdate(w http.ResponseWriter, r *http.Request) {
 			upsertActiveLLMProfile(values)
 		}
 		applyOptionalSecret(&values.Credentials.TushareToken, request.Credentials.TushareToken)
+		applyOptionalString(&values.TushareAPIURL, request.TushareAPIURL)
 		applyOptionalSecret(&values.Credentials.THSCookie, request.Credentials.THSCookie)
 		// Snowball authentication is now owned by Electron's isolated browser
 		// partitions. Remove the legacy shared cookie whenever settings are saved.
@@ -433,6 +436,18 @@ func validateSingleLLM(request settingsUpdateRequest) error {
 			}
 		}
 	}
+	if request.TushareAPIURL != nil {
+		tushareURL := strings.TrimSpace(*request.TushareAPIURL)
+		if len(tushareURL) > 512 {
+			return fmt.Errorf("tushare api url is too long")
+		}
+		if tushareURL != "" {
+			parsed, err := url.Parse(tushareURL)
+			if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" {
+				return fmt.Errorf("tushare api url must be an http or https URL")
+			}
+		}
+	}
 	secrets := []*string{
 		request.LLM.APIKey,
 		request.Credentials.TushareToken,
@@ -510,6 +525,7 @@ func (s *Server) buildSettingsView(values appsettings.Values) settingsView {
 		view.LLMProfiles = append(view.LLMProfiles, llmProfileView{ID: profile.ID, Name: profile.Name, Provider: profile.Provider, BaseURL: profile.BaseURL, Model: profile.Model, APIMode: normalizeAPIMode(profile.APIMode, profile.Provider), APIKey: secretSettingStatus{Configured: configured}})
 	}
 	view.Credentials.TushareToken = secretStatus(values.Credentials.TushareToken)
+	view.TushareAPIURL = strings.TrimSpace(values.TushareAPIURL)
 	view.Credentials.THSCookie = secretStatus(values.Credentials.THSCookie)
 	view.Credentials.XueqiuCookie = secretStatus(values.Credentials.XueqiuCookie)
 	view.Credentials.EastMoneyCookie = secretStatus(values.Credentials.EastMoneyCookie)

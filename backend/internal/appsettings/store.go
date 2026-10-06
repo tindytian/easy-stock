@@ -24,6 +24,8 @@ const (
 	DefaultLLMResponseTimeoutSeconds = 300
 	MinLLMResponseTimeoutSeconds     = 30
 	MaxLLMResponseTimeoutSeconds     = 3600
+	// DefaultTushareAPIURL 是 Tushare Pro 官方接口地址；用户可改填兼容中转。
+	DefaultTushareAPIURL = "http://api.tushare.pro"
 )
 
 func NormalizeLLMResponseTimeoutSeconds(value int) int {
@@ -78,6 +80,7 @@ type Values struct {
 	LLMProfiles        []LLMProfile     `json:"llm_profiles,omitempty"`
 	ActiveLLMProfileID string           `json:"active_llm_profile_id,omitempty"`
 	Credentials        Credentials      `json:"credentials"`
+	TushareAPIURL      string           `json:"tushare_api_url,omitempty"`
 	ReviewAutomation   ReviewAutomation `json:"review_automation"`
 	UpdatedAt          time.Time        `json:"updated_at,omitempty"`
 }

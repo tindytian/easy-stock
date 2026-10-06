@@ -585,6 +585,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("POST /api/v1/settings/llm/models", s.settingsLLMModels)
 	s.mux.HandleFunc("POST /api/v1/settings/llm/api-key/reveal", s.settingsLLMAPIKeyReveal)
 	s.mux.HandleFunc("POST /api/v1/settings/llm/test", s.settingsLLMTest)
+	s.mux.HandleFunc("POST /api/v1/settings/tushare/test", s.settingsTushareTest)
 	s.mux.HandleFunc("GET /api/v1/ai/ws", s.aiChatWebSocket)
 	s.mux.HandleFunc("POST /api/v1/strategy/inflections/evaluate", s.inflectionEvaluate)
 	s.mux.HandleFunc("GET /api/v1/ws/stream", s.stream)
