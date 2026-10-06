@@ -50,10 +50,10 @@ npm run package:mac   # 仅打目录包(不产 DMG),速度更快
 
 后端单测(含新增 Tushare 用例):`cd backend && go test ./internal/httpapi/ ./internal/appsettings/`。
 
-端到端验证脚本(本地模拟中转,不碰真实用户数据,可在升级后直接复跑):
+端到端验证脚本(本地模拟中转,不碰真实用户数据,升级后直接复跑):
 
 ```bash
-bash /tmp/easy-stock-e2e/run-e2e.sh   # 脚本与 mock-relay.cjs 见本次交付记录
+bash scripts/tushare-relay-e2e/run-e2e.sh   # 可选参数:后端端口,默认 20099
 ```
 
 脚本把所有数据路径指向 `/tmp/easy-stock-e2e/data`,验证:保存回显、重启恢复、自定义地址生效、请求格式(`api_name/token/params/fields`)、无 Token 412、中转业务错误透出、非法协议 400、settings.json 0600、日志无明文 Token。本轮结果 **18/18 通过**。
@@ -111,7 +111,7 @@ git merge v<新版本>                           # 合并官方发行 tag(不是
 # 解决冲突:优先保留官方上游实现,再重新套用本文件第 2 节的改动点
 npm test                                     # 官方测试入口
 cd backend && go test ./internal/httpapi/ ./internal/appsettings/   # 中转相关用例
-bash /tmp/easy-stock-e2e/run-e2e.sh          # E2E 复跑(脚本丢失时按第 4 节重建)
+bash scripts/tushare-relay-e2e/run-e2e.sh          # E2E 复跑
 npm run installer:mac                        # 重新打包
 git checkout codex/tushare-relay && git merge upgrade/v<新版本>     # 验证通过后合回
 git tag tushare-relay-v<新版本>-1            # 可回退的 Git 标记(个人版命名,避免与官方 tag 冲突)
