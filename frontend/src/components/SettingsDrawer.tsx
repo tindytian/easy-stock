@@ -21,7 +21,7 @@ import {
 	X,
 } from 'lucide-react';
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
-import { AppSettings, BackendConfig, BackendRequestError, BrowserAuthStatus, LLMConnectionTestResult, LLMModelOption, LLMModelsResult, LLMProfile, ReviewAutomationProfile, RuntimeLogStatus, SecretSettingStatus, WechatServiceStatus, requestJSON } from '../lib/backend';
+import { AppSettings, BackendConfig, BackendRequestError, BrowserAuthStatus, LLMConnectionTestResult, LLMModelOption, LLMModelsResult, LLMProfile, ReviewAutomationProfile, RuntimeLogStatus, SecretSettingStatus, TushareConnectionTestResult, WechatServiceStatus, requestJSON } from '../lib/backend';
 import { llmBaseURLForAPIMode, llmProviderDefinition, llmProviders } from '../lib/llm-providers';
 import { AppUpdatePanel } from './AppUpdatePanel';
 import { AgentSettingsPanel } from './AgentSettingsPanel';
@@ -69,6 +69,9 @@ export function SettingsDrawer({ config, open, initialSection, onClose, onSaved 
 	const [reviewProfiles, setReviewProfiles] = useState<ReviewProfileDraft[]>([]);
 	const [secrets, setSecrets] = useState<Record<SecretKey, string>>(emptySecrets);
 	const [clearSecrets, setClearSecrets] = useState<Set<SecretKey>>(new Set());
+	const [tushareAPIURL, setTushareAPIURL] = useState('');
+	const [tushareTestState, setTushareTestState] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
+	const [tushareTestMessage, setTushareTestMessage] = useState('');
 	const [state, setState] = useState<'idle' | 'loading' | 'saving' | 'saved' | 'error'>('idle');
 	const [message, setMessage] = useState('');
 	const [testState, setTestState] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
@@ -141,6 +144,9 @@ export function SettingsDrawer({ config, open, initialSection, onClose, onSaved 
 				void refreshBrowserAuthStatuses(profiles);
 				setSecrets(emptySecrets());
 				setClearSecrets(new Set());
+				setTushareAPIURL(payload.data.tushare_api_url || '');
+				setTushareTestState('idle');
+				setTushareTestMessage('');
 				setState('idle');
 			})
 			.catch((error) => {
@@ -432,7 +438,7 @@ export function SettingsDrawer({ config, open, initialSection, onClose, onSaved 
 		const payload = await requestJSON<{ data: AppSettings }>(config, '/api/v1/settings', {
 			method: 'PUT',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ agent_runtime: agentRuntime, llm: { response_timeout_seconds: responseTimeoutSeconds }, llm_profiles: modelProfiles, active_llm_profile_id: activeLLMProfileID, credentials, review_automation: { profiles: reviewProfiles.map((profile) => ({ id: profile.id, source: profile.source, name: profile.name.trim(), base_url: profile.source === 'wechat' ? '' : profile.base_url.trim(), credential: profile.source === 'wechat' ? undefined : profile.credential_value.trim() || undefined, clear_credential: profile.source === 'wechat' || profile.clear_credential, sync_hour: profile.sync_hour, auto_analyze: profile.auto_analyze, enabled: profile.enabled })) }, clear_secrets: [...clearSecrets].filter((key) => key !== 'llm_api_key').concat('wechat_api_token') }),
+			body: JSON.stringify({ agent_runtime: agentRuntime, llm: { response_timeout_seconds: responseTimeoutSeconds }, llm_profiles: modelProfiles, active_llm_profile_id: activeLLMProfileID, credentials, tushare_api_url: tushareAPIURL.trim(), review_automation: { profiles: reviewProfiles.map((profile) => ({ id: profile.id, source: profile.source, name: profile.name.trim(), base_url: profile.source === 'wechat' ? '' : profile.base_url.trim(), credential: profile.source === 'wechat' ? undefined : profile.credential_value.trim() || undefined, clear_credential: profile.source === 'wechat' || profile.clear_credential, sync_hour: profile.sync_hour, auto_analyze: profile.auto_analyze, enabled: profile.enabled })) }, clear_secrets: [...clearSecrets].filter((key) => key !== 'llm_api_key').concat('wechat_api_token') }),
 		});
 		setSettings(payload.data);
 		setAgentRuntime(payload.data.agent_runtime || 'hermes');
@@ -485,6 +491,21 @@ export function SettingsDrawer({ config, open, initialSection, onClose, onSaved 
 			setTestState('error');
 			setState('error');
 			setMessage(error instanceof Error ? error.message : '模型连接测试失败');
+		}
+	};
+
+	const testTushareConnection = async () => {
+		if (!config) return;
+		setTushareTestState('testing');
+		setTushareTestMessage('');
+		try {
+			await persistSettings();
+			const payload = await requestJSON<{ data: TushareConnectionTestResult }>(config, '/api/v1/settings/tushare/test', { method: 'POST' });
+			setTushareTestState('success');
+			setTushareTestMessage(payload.data.message || `连接成功，耗时 ${payload.data.latency_ms}ms`);
+		} catch (error) {
+			setTushareTestState('error');
+			setTushareTestMessage(error instanceof Error && error.message ? error.message : 'Tushare 连接测试失败');
 		}
 	};
 
@@ -572,7 +593,15 @@ export function SettingsDrawer({ config, open, initialSection, onClose, onSaved 
 								<span><CheckCircle2 size={14} />新浪财经：公共行情已接入</span>
 								<span><CheckCircle2 size={14} />财联社：公开资讯已接入</span>
 							</div>
-							<SecretField label="Tushare Pro Token" secretKey="tushare_token" status={settings?.credentials.tushare_token} value={secrets.tushare_token} clearing={clearSecrets.has('tushare_token')} onChange={updateSecret} onClear={toggleClear} hint="预留：基础数据、指数和日线增强" />
+							<div className="tushare-endpoint-field">
+								<label>
+									<span>Tushare 接口地址</span>
+									<input value={tushareAPIURL} onChange={(event) => { setTushareAPIURL(event.target.value); setTushareTestState('idle'); setTushareTestMessage(''); }} placeholder="http://api.tushare.pro" spellCheck={false} autoComplete="off" />
+								</label>
+								<button type="button" onClick={() => void testTushareConnection()} disabled={!config || state === 'saving' || tushareTestState === 'testing'}>{tushareTestState === 'testing' ? <LoaderCircle className="spin" size={15} /> : <PlugZap size={15} />}测试连接</button>
+							</div>
+							<p className={`settings-field-note tushare-test-message ${tushareTestState}`}>{tushareTestState === 'success' ? <CheckCircle2 size={13} /> : tushareTestState === 'error' ? <CircleAlert size={13} /> : null}{tushareTestMessage || '留空使用官方地址 http://api.tushare.pro；可填写兼容 Tushare 报文的中转地址（支持 HTTP/HTTPS，保留路径和端口）。测试会保存设置并用已保存的 Token 发起一次真实请求。'}</p>
+							<SecretField label="Tushare Pro Token" secretKey="tushare_token" status={settings?.credentials.tushare_token} value={secrets.tushare_token} clearing={clearSecrets.has('tushare_token')} onChange={updateSecret} onClear={toggleClear} hint="预留：基础数据、指数和日线增强；上方“测试连接”会使用该 Token" />
 							<SecretField label="同花顺 Cookie / Token" secretKey="ths_cookie" status={settings?.credentials.ths_cookie} value={secrets.ths_cookie} clearing={clearSecrets.has('ths_cookie')} onChange={updateSecret} onClear={toggleClear} hint="预留：涨停原因与题材催化数据" />
 							<SecretField label="东方财富 Cookie" secretKey="eastmoney_cookie" status={settings?.credentials.eastmoney_cookie} value={secrets.eastmoney_cookie} clearing={clearSecrets.has('eastmoney_cookie')} onChange={updateSecret} onClear={toggleClear} hint="当前公共行情不需要，预留登录态接口" />
 						</SettingsSection>

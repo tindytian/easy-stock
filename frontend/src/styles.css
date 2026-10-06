@@ -3507,6 +3507,44 @@ a:focus-visible {
 	font-size: 13px;
 }
 
+.tushare-endpoint-field {
+	display: flex;
+	align-items: flex-end;
+	gap: 8px;
+	padding-top: 12px;
+}
+.tushare-endpoint-field label { flex: 1; display: grid; gap: 6px; }
+.tushare-endpoint-field span { color: var(--text); font-size: 14px; font-weight: 650; }
+.tushare-endpoint-field input {
+	padding: 8px 10px;
+	border: 1px solid var(--line-soft);
+	border-radius: 7px;
+	background: var(--bg);
+	color: var(--text);
+	font-family: "SFMono-Regular", Consolas, monospace;
+	font-size: 13px;
+}
+.tushare-endpoint-field button {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 8px 12px;
+	border: 1px solid var(--line-soft);
+	border-radius: 7px;
+	background: var(--theme-surface-soft, #f1fbf7);
+	color: var(--text);
+	font-size: 13px;
+}
+.tushare-test-message {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	margin-top: 6px;
+}
+.tushare-test-message.success { color: var(--theme-green, #167653); }
+.tushare-test-message.error { color: var(--theme-red, #bc303a); }
+
 .secret-field {
 	padding-top: 12px;
 	border-top: 1px solid var(--line-soft);

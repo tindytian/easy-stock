@@ -134,10 +134,20 @@ export type AppSettings = {
 		eastmoney_cookie: SecretSettingStatus;
 		wechat_api_token: SecretSettingStatus;
 	};
+	tushare_api_url: string;
 	review_automation: {
 		profiles: ReviewAutomationProfile[];
 	};
 	updated_at?: string;
+};
+
+export type TushareConnectionTestResult = {
+	ok: boolean;
+	base_url: string;
+	api_name: string;
+	latency_ms: number;
+	rows: number;
+	message: string;
 };
 
 export type LLMProfile = {
